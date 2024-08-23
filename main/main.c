@@ -161,19 +161,57 @@ void start_webserver(void) {
     }
 }
 
-// I2S Initialization using i2s_std.h
+// // I2S Initialization using i2s_std.h
+// void i2s_init(void) {
+//     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+//     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));  // Correctly obtain RX handle
+
+//     i2s_std_config_t std_cfg = {
+//         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
+//         .slot_cfg = {
+//             .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,
+//             .slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT,
+//             .slot_mode = I2S_SLOT_MODE_MONO,
+//             .slot_mask = I2S_STD_SLOT_RIGHT,
+//             .ws_width = 16,
+//             .ws_pol = false,
+//             .bit_shift = true,
+//         },
+//         .gpio_cfg = {
+//             .mclk = I2S_GPIO_UNUSED,
+//             .bclk = GPIO_NUM_14,
+//             .ws = GPIO_NUM_15,
+//             .dout = I2S_GPIO_UNUSED,
+//             .din = GPIO_NUM_16,
+//             .invert_flags = {
+//                 .mclk_inv = false,
+//                 .bclk_inv = false,
+//                 .ws_inv = false,
+//             },
+//         },
+//     };
+
+//     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+//     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+// }
+
+// Function to initialize I2S
 void i2s_init(void) {
+    // Use your existing channel configuration
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));  // Correctly obtain RX handle
 
+    // Configuration for I2S standard mode
     i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
+        .clk_cfg = {
+            .sample_rate_hz = 16000,
+            .clk_src = I2S_CLK_SRC_DEFAULT,
+            .mclk_multiple = I2S_MCLK_MULTIPLE_256,  // Ensure mclk_multiple is set correctly
+        },
         .slot_cfg = {
             .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,
             .slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT,
             .slot_mode = I2S_SLOT_MODE_MONO,
-            .slot_mask = I2S_STD_SLOT_RIGHT,
-            .ws_width = 16,
             .ws_pol = false,
             .bit_shift = true,
         },
