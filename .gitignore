@@ -35,3 +35,6 @@ Thumbs.db
 
 # Ignore core dumps
 core
+
+# Ignore kicad backups
+/ddrpad/ddrpad-backups/
