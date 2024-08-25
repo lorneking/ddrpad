@@ -12,9 +12,11 @@
 #include "esp_task_wdt.h"  // Include task watchdog
 #include "esp_wifi.h"
 #include "esp_event.h"
+#include "esp_https_ota.h"
 #include "HX711.h"  // Include HX711 library
 #include "i2s_config.h"
 #include "wifi_credentials.h"
+#include "ota_firmware_update.h"
 
 // Wi-Fi Credentials
 // #define WIFI_SSID "SSID"
@@ -153,43 +155,25 @@ void start_webserver(void) {
     }
 }
 
-// // Function to initialize I2S
-// void i2s_init(void) {
-//     // Use your existing channel configuration
-//     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-//     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));  // Correctly obtain RX handle
+// OTA Update Task
+void ota_update_task(void *pvParameter) {
+    ESP_LOGI(TAG, "Starting OTA update...");
 
-//     // Configuration for I2S standard mode
-//     i2s_std_config_t std_cfg = {
-//         .clk_cfg = {
-//             .sample_rate_hz = 16000,
-//             .clk_src = I2S_CLK_SRC_DEFAULT,
-//             .mclk_multiple = I2S_MCLK_MULTIPLE_256,  // Ensure mclk_multiple is set correctly
-//         },
-//         .slot_cfg = {
-//             .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,
-//             .slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT,
-//             .slot_mode = I2S_SLOT_MODE_MONO,
-//             .ws_pol = false,
-//             .bit_shift = true,
-//         },
-//         .gpio_cfg = {
-//             .mclk = I2S_GPIO_UNUSED,
-//             .bclk = GPIO_NUM_14,
-//             .ws = GPIO_NUM_15,
-//             .dout = I2S_GPIO_UNUSED,
-//             .din = GPIO_NUM_16,
-//             .invert_flags = {
-//                 .mclk_inv = false,
-//                 .bclk_inv = false,
-//                 .ws_inv = false,
-//             },
-//         },
-//     };
+    esp_http_client_config_t config = {
+        .url = OTA_URL,
+        .event_handler = NULL,
+    };
 
-//     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
-//     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
-// }
+    esp_err_t ret = esp_https_ota(&config);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "OTA update successful, restarting...");
+        esp_restart();
+    } else {
+        ESP_LOGE(TAG, "OTA update failed...");
+    }
+
+    vTaskDelete(NULL);
+}
 
 // LED Control
 void control_led(int gpio_num, bool state) {
@@ -243,5 +227,7 @@ void app_main(void) {
     i2s_chan_handle_t rx_handle;
     ESP_ERROR_CHECK(init_i2s(&rx_handle));
 
+    // Start OTA update task
+    xTaskCreate(&ota_update_task, "ota_update_task", 8192, NULL, 5, NULL);
     //vTaskDelay(pdMS_TO_TICKS(500)); // Delay to prevent tight loop
 }
