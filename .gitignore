@@ -38,3 +38,4 @@ core
 
 # Ignore kicad backups
 /ddrpad/ddrpad-backups/
+main/wifi_credentials.h

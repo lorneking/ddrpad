@@ -14,10 +14,11 @@
 #include "esp_event.h"
 #include "HX711.h"  // Include HX711 library
 #include "i2s_config.h"
+#include "wifi_credentials.h"
 
 // Wi-Fi Credentials
-#define WIFI_SSID "SSID"
-#define WIFI_PASS "PASS"
+// #define WIFI_SSID "SSID"
+// #define WIFI_PASS "PASS"
 #define WIFI_AUTH WIFI_AUTH_WPA3_PSK
 #define MAX_RETRY 10
 
@@ -236,7 +237,8 @@ void app_main(void) {
     // i2s_init(); // Initialize I2S
     start_webserver();
 
-    xTaskCreate(&hx711_task, "hx711_task", 2048, NULL, 5, NULL);
+    // xTaskCreate(&hx711_task, "hx711_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&hx711_task, "hx711_task", 4096, NULL, 5, NULL);
 
     i2s_chan_handle_t rx_handle;
     ESP_ERROR_CHECK(init_i2s(&rx_handle));
