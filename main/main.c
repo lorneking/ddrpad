@@ -13,6 +13,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "HX711.h"  // Include HX711 library
+#include "i2s_config.h"
 
 // Wi-Fi Credentials
 #define WIFI_SSID "SSID"
@@ -151,43 +152,43 @@ void start_webserver(void) {
     }
 }
 
-// Function to initialize I2S
-void i2s_init(void) {
-    // Use your existing channel configuration
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));  // Correctly obtain RX handle
+// // Function to initialize I2S
+// void i2s_init(void) {
+//     // Use your existing channel configuration
+//     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+//     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));  // Correctly obtain RX handle
 
-    // Configuration for I2S standard mode
-    i2s_std_config_t std_cfg = {
-        .clk_cfg = {
-            .sample_rate_hz = 16000,
-            .clk_src = I2S_CLK_SRC_DEFAULT,
-            .mclk_multiple = I2S_MCLK_MULTIPLE_256,  // Ensure mclk_multiple is set correctly
-        },
-        .slot_cfg = {
-            .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,
-            .slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT,
-            .slot_mode = I2S_SLOT_MODE_MONO,
-            .ws_pol = false,
-            .bit_shift = true,
-        },
-        .gpio_cfg = {
-            .mclk = I2S_GPIO_UNUSED,
-            .bclk = GPIO_NUM_14,
-            .ws = GPIO_NUM_15,
-            .dout = I2S_GPIO_UNUSED,
-            .din = GPIO_NUM_16,
-            .invert_flags = {
-                .mclk_inv = false,
-                .bclk_inv = false,
-                .ws_inv = false,
-            },
-        },
-    };
+//     // Configuration for I2S standard mode
+//     i2s_std_config_t std_cfg = {
+//         .clk_cfg = {
+//             .sample_rate_hz = 16000,
+//             .clk_src = I2S_CLK_SRC_DEFAULT,
+//             .mclk_multiple = I2S_MCLK_MULTIPLE_256,  // Ensure mclk_multiple is set correctly
+//         },
+//         .slot_cfg = {
+//             .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,
+//             .slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT,
+//             .slot_mode = I2S_SLOT_MODE_MONO,
+//             .ws_pol = false,
+//             .bit_shift = true,
+//         },
+//         .gpio_cfg = {
+//             .mclk = I2S_GPIO_UNUSED,
+//             .bclk = GPIO_NUM_14,
+//             .ws = GPIO_NUM_15,
+//             .dout = I2S_GPIO_UNUSED,
+//             .din = GPIO_NUM_16,
+//             .invert_flags = {
+//                 .mclk_inv = false,
+//                 .bclk_inv = false,
+//                 .ws_inv = false,
+//             },
+//         },
+//     };
 
-    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
-    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
-}
+//     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+//     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+// }
 
 // LED Control
 void control_led(int gpio_num, bool state) {
@@ -232,47 +233,13 @@ void app_main(void) {
 
     wifi_init_sta();
     hx711_init();
-    i2s_init(); // Initialize I2S
+    // i2s_init(); // Initialize I2S
     start_webserver();
 
     xTaskCreate(&hx711_task, "hx711_task", 2048, NULL, 5, NULL);
 
-    while (1) {
-        //ESP_LOGI("MAIN", "Running main loop...");
+    i2s_chan_handle_t rx_handle;
+    ESP_ERROR_CHECK(init_i2s(&rx_handle));
 
-        // Sound detection via I2S
-        int16_t sampleBuffer[512];
-        size_t bytes_read;
-
-        if (rx_handle != NULL) {
-            esp_err_t err = i2s_channel_read(rx_handle, sampleBuffer, sizeof(sampleBuffer), &bytes_read, portMAX_DELAY);
-
-            if (err == ESP_OK && bytes_read > 0) {
-                int32_t soundLevel = 0;
-                for (int i = 0; i < 512; i++) {
-                    soundLevel += abs(sampleBuffer[i]);
-                }
-                soundLevel /= 512;
-
-                if (soundLevel > soundThreshold) {
-                    // Flash all LEDs
-                    control_led(LED_1_GATE, true);
-                    control_led(LED_2_GATE, true);
-                    control_led(LED_3_GATE, true);
-                    control_led(LED_4_GATE, true);
-                    vTaskDelay(pdMS_TO_TICKS(100));
-                    control_led(LED_1_GATE, false);
-                    control_led(LED_2_GATE, false);
-                    control_led(LED_3_GATE, false);
-                    control_led(LED_4_GATE, false);
-                }
-            } else {
-                ESP_LOGE("I2S", "Error reading I2S data: %s", esp_err_to_name(err));
-            }
-        } else {
-            ESP_LOGE("I2S", "I2S handle is NULL");
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(500)); // Delay to prevent tight loop
-    }
+    //vTaskDelay(pdMS_TO_TICKS(500)); // Delay to prevent tight loop
 }
