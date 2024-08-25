@@ -21,8 +21,11 @@
 #define MAX_RETRY 10
 
 // GPIO Pins
-#define HX711_1_DT GPIO_NUM_4
-#define HX711_1_SCK GPIO_NUM_5
+#define HX711_SCK GPIO_NUM_4
+#define HX711_1_DT GPIO_NUM_5
+#define HX711_2_DT GPIO_NUM_6
+#define HX711_3_DT GPIO_NUM_7
+#define HX711_4_DT GPIO_NUM_8
 #define LED_1_GATE GPIO_NUM_35
 #define LED_2_GATE GPIO_NUM_36
 #define LED_3_GATE GPIO_NUM_37
@@ -37,42 +40,37 @@ i2s_chan_handle_t rx_handle;
 static const char *TAG = "wifi_station";
 static int retry_count = 0;
 
+void hx711_task(void *pvParameter) {
+    while (1) {
+        long weight1 = hx711_read(HX711_1_DT);
+        long weight2 = hx711_read(HX711_2_DT);
+        long weight3 = hx711_read(HX711_3_DT);
+        long weight4 = hx711_read(HX711_4_DT);
 
-// HX711 Initialization
-void hx711_init(void) {
-    gpio_set_direction(HX711_1_DT, GPIO_MODE_INPUT);
-    gpio_set_direction(HX711_1_SCK, GPIO_MODE_OUTPUT);
-}
+        if (weight1 != -1) ESP_LOGI(TAG, "Weight1: %ld", weight1);
+        if (weight2 != -1) ESP_LOGI(TAG, "Weight2: %ld", weight2);
+        if (weight3 != -1) ESP_LOGI(TAG, "Weight3: %ld", weight3);
+        if (weight4 != -1) ESP_LOGI(TAG, "Weight4: %ld", weight4);
 
-long hx711_read(void) {
-    long count = 0;
-    gpio_set_level(HX711_1_SCK, 0); // Ensure SCK is low
-    while (gpio_get_level(HX711_1_DT)); // Wait for DT to go low
-
-    for (int i = 0; i < 24; i++) {
-        gpio_set_level(HX711_1_SCK, 1);
-        count = count << 1;
-        gpio_set_level(HX711_1_SCK, 0);
-        if (gpio_get_level(HX711_1_DT)) {
-            count++;
-        }
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second
     }
-
-    // Set the gain to 128
-    gpio_set_level(HX711_1_SCK, 1);
-    count = count ^ 0x800000; // Convert to signed value
-    gpio_set_level(HX711_1_SCK, 0);
-
-    return count;
 }
 
+// HTTP GET handler to read data from HX711 sensors
 esp_err_t hx711_get_handler(httpd_req_t *req) {
-    long sensor_value = hx711_read();
-    char resp_str[64];
-    snprintf(resp_str, sizeof(resp_str), "HX711 Sensor Value: %ld", sensor_value);
+    long sensor_value1 = hx711_read(HX711_1_DT);
+    long sensor_value2 = hx711_read(HX711_2_DT);
+    long sensor_value3 = hx711_read(HX711_3_DT);
+    long sensor_value4 = hx711_read(HX711_4_DT);
+
+    char resp_str[256];
+    snprintf(resp_str, sizeof(resp_str), 
+             "HX711 Sensor Values:\nSensor 1: %ld\nSensor 2: %ld\nSensor 3: %ld\nSensor 4: %ld", 
+             sensor_value1, sensor_value2, sensor_value3, sensor_value4);
     httpd_resp_send(req, resp_str, strlen(resp_str));
     return ESP_OK;
 }
+
 
 // Event handler for Wi-Fi events
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
@@ -95,14 +93,6 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
     }
 }
 
-// Task to read data from HX711
-void hx711_task(void *pvParameter) {
-    while (1) {
-        long weight = hx711_read();
-        ESP_LOGI(TAG, "Weight: %ld", weight);
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second
-    }
-}
 
 // Initialize Wi-Fi as station
 void wifi_init_sta(void) {
@@ -160,40 +150,6 @@ void start_webserver(void) {
         httpd_register_uri_handler(server, &uri_hx711);
     }
 }
-
-// // I2S Initialization using i2s_std.h
-// void i2s_init(void) {
-//     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-//     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));  // Correctly obtain RX handle
-
-//     i2s_std_config_t std_cfg = {
-//         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
-//         .slot_cfg = {
-//             .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,
-//             .slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT,
-//             .slot_mode = I2S_SLOT_MODE_MONO,
-//             .slot_mask = I2S_STD_SLOT_RIGHT,
-//             .ws_width = 16,
-//             .ws_pol = false,
-//             .bit_shift = true,
-//         },
-//         .gpio_cfg = {
-//             .mclk = I2S_GPIO_UNUSED,
-//             .bclk = GPIO_NUM_14,
-//             .ws = GPIO_NUM_15,
-//             .dout = I2S_GPIO_UNUSED,
-//             .din = GPIO_NUM_16,
-//             .invert_flags = {
-//                 .mclk_inv = false,
-//                 .bclk_inv = false,
-//                 .ws_inv = false,
-//             },
-//         },
-//     };
-
-//     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
-//     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
-// }
 
 // Function to initialize I2S
 void i2s_init(void) {
