@@ -164,7 +164,7 @@ void ota_update_task(void *pvParameter) {
         .event_handler = NULL,
     };
 
-    esp_err_t ret = esp_https_ota(&config);
+    esp_err_t ret = esp_https_ota((const esp_http_client_config_t*)&config);
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "OTA update successful, restarting...");
         esp_restart();
