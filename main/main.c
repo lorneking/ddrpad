@@ -12,11 +12,11 @@
 #include "esp_task_wdt.h"  // Include task watchdog
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "esp_https_ota.h"
+// #include "esp_https_ota.h"
 #include "HX711.h"  // Include HX711 library
 #include "i2s_config.h"
 #include "wifi_credentials.h"
-#include "ota_firmware_update.h"
+// #include "ota_firmware_update.h"
 
 // Wi-Fi Credentials
 // #define WIFI_SSID "SSID"
@@ -44,12 +44,35 @@ i2s_chan_handle_t rx_handle;
 static const char *TAG = "wifi_station";
 static int retry_count = 0;
 
+// void hx711_task(void *pvParameter) {
+//     while (1) {
+//         long weight1 = hx711_read(HX711_1_DT);
+//         long weight2 = hx711_read(HX711_2_DT);
+//         long weight3 = hx711_read(HX711_3_DT);
+//         long weight4 = hx711_read(HX711_4_DT);
+
+//         if (weight1 != -1) ESP_LOGI(TAG, "Weight1: %ld", weight1);
+//         if (weight2 != -1) ESP_LOGI(TAG, "Weight2: %ld", weight2);
+//         if (weight3 != -1) ESP_LOGI(TAG, "Weight3: %ld", weight3);
+//         if (weight4 != -1) ESP_LOGI(TAG, "Weight4: %ld", weight4);
+
+//         vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second
+//     }
+// }
+
+HX711 scale1, scale2, scale3, scale4;
+
 void hx711_task(void *pvParameter) {
+    hx711_init(&scale1, HX711_1_DT, HX711_SCK, 128);
+    hx711_init(&scale2, HX711_2_DT, HX711_SCK, 128);
+    hx711_init(&scale3, HX711_3_DT, HX711_SCK, 128);
+    hx711_init(&scale4, HX711_4_DT, HX711_SCK, 128);
+
     while (1) {
-        long weight1 = hx711_read(HX711_1_DT);
-        long weight2 = hx711_read(HX711_2_DT);
-        long weight3 = hx711_read(HX711_3_DT);
-        long weight4 = hx711_read(HX711_4_DT);
+        long weight1 = hx711_read(&scale1);
+        long weight2 = hx711_read(&scale2);
+        long weight3 = hx711_read(&scale3);
+        long weight4 = hx711_read(&scale4);
 
         if (weight1 != -1) ESP_LOGI(TAG, "Weight1: %ld", weight1);
         if (weight2 != -1) ESP_LOGI(TAG, "Weight2: %ld", weight2);
@@ -60,12 +83,11 @@ void hx711_task(void *pvParameter) {
     }
 }
 
-// HTTP GET handler to read data from HX711 sensors
 esp_err_t hx711_get_handler(httpd_req_t *req) {
-    long sensor_value1 = hx711_read(HX711_1_DT);
-    long sensor_value2 = hx711_read(HX711_2_DT);
-    long sensor_value3 = hx711_read(HX711_3_DT);
-    long sensor_value4 = hx711_read(HX711_4_DT);
+    long sensor_value1 = hx711_read(&scale1);
+    long sensor_value2 = hx711_read(&scale2);
+    long sensor_value3 = hx711_read(&scale3);
+    long sensor_value4 = hx711_read(&scale4);
 
     char resp_str[256];
     snprintf(resp_str, sizeof(resp_str), 
@@ -74,6 +96,21 @@ esp_err_t hx711_get_handler(httpd_req_t *req) {
     httpd_resp_send(req, resp_str, strlen(resp_str));
     return ESP_OK;
 }
+
+// // HTTP GET handler to read data from HX711 sensors
+// esp_err_t hx711_get_handler(httpd_req_t *req) {
+//     long sensor_value1 = hx711_read(HX711_1_DT);
+//     long sensor_value2 = hx711_read(HX711_2_DT);
+//     long sensor_value3 = hx711_read(HX711_3_DT);
+//     long sensor_value4 = hx711_read(HX711_4_DT);
+
+//     char resp_str[256];
+//     snprintf(resp_str, sizeof(resp_str), 
+//              "HX711 Sensor Values:\nSensor 1: %ld\nSensor 2: %ld\nSensor 3: %ld\nSensor 4: %ld", 
+//              sensor_value1, sensor_value2, sensor_value3, sensor_value4);
+//     httpd_resp_send(req, resp_str, strlen(resp_str));
+//     return ESP_OK;
+// }
 
 
 // Event handler for Wi-Fi events
@@ -155,25 +192,31 @@ void start_webserver(void) {
     }
 }
 
-// OTA Update Task
-void ota_update_task(void *pvParameter) {
-    ESP_LOGI(TAG, "Starting OTA update...");
+// void ota_update_task(void *pvParameter) {
+//     ESP_LOGI(TAG, "Starting OTA update...");
 
-    esp_http_client_config_t config = {
-        .url = OTA_URL,
-        .event_handler = NULL,
-    };
+//     // Ensure OTA_URL is defined and valid
+//     if (OTA_URL == NULL) {
+//         ESP_LOGE(TAG, "OTA URL is not defined");
+//         vTaskDelete(NULL);
+//         return;
+//     }
 
-    esp_err_t ret = esp_https_ota(&config);
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "OTA update successful, restarting...");
-        esp_restart();
-    } else {
-        ESP_LOGE(TAG, "OTA update failed...");
-    }
+//     esp_http_client_config_t config = {
+//         .url = OTA_URL,
+//         .event_handler = NULL,
+//     };
 
-    vTaskDelete(NULL);
-}
+//     esp_err_t ret = esp_https_ota(&config);
+//     if (ret == ESP_OK) {
+//         ESP_LOGI(TAG, "OTA update successful, restarting...");
+//         esp_restart();
+//     } else {
+//         ESP_LOGE(TAG, "OTA update failed...");
+//     }
+
+//     vTaskDelete(NULL);
+// }
 
 // LED Control
 void control_led(int gpio_num, bool state) {
@@ -217,7 +260,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(ret);
 
     wifi_init_sta();
-    hx711_init();
+    //hx711_init();
     // i2s_init(); // Initialize I2S
     start_webserver();
 
@@ -228,6 +271,6 @@ void app_main(void) {
     ESP_ERROR_CHECK(init_i2s(&rx_handle));
 
     // Start OTA update task
-    xTaskCreate(&ota_update_task, "ota_update_task", 8192, NULL, 5, NULL);
+    // xTaskCreate(&ota_update_task, "ota_update_task", 8192, NULL, 5, NULL);
     //vTaskDelay(pdMS_TO_TICKS(500)); // Delay to prevent tight loop
 }
