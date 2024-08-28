@@ -202,10 +202,20 @@ void start_webserver(void) {
 //         return;
 //     }
 
+<<<<<<< HEAD
 //     esp_http_client_config_t config = {
 //         .url = OTA_URL,
 //         .event_handler = NULL,
 //     };
+=======
+    esp_err_t ret = esp_https_ota((const esp_http_client_config_t*)&config);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "OTA update successful, restarting...");
+        esp_restart();
+    } else {
+        ESP_LOGE(TAG, "OTA update failed...");
+    }
+>>>>>>> 02f900258728ce976c235a811913e6d484669120
 
 //     esp_err_t ret = esp_https_ota(&config);
 //     if (ret == ESP_OK) {
