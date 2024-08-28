@@ -39,5 +39,3 @@ core
 # Ignore kicad backups
 /ddrpad/ddrpad-backups/
 main/wifi_credentials.h
-main/hx711.c.old
-main/hx711.h.old
