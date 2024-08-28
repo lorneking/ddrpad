@@ -44,8 +44,12 @@ void hx711_set_gain(HX711 *hx711, uint8_t gain) {
     }
 }
 
-// Read data from HX711
 long hx711_read(HX711 *hx711) {
+    if (hx711 == NULL) {
+        ESP_LOGE(TAG, "hx711 pointer is NULL");
+        return -1;
+    }
+
     hx711_wait_ready(hx711, 0);
 
     unsigned long value = 0;
@@ -55,9 +59,14 @@ long hx711_read(HX711 *hx711) {
     portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&mux);
 
+    ESP_LOGD(TAG, "Reading data from HX711");
+
     data[2] = hx711_shift_in_slow(hx711->DOUT, hx711->PD_SCK, MSBFIRST);
     data[1] = hx711_shift_in_slow(hx711->DOUT, hx711->PD_SCK, MSBFIRST);
     data[0] = hx711_shift_in_slow(hx711->DOUT, hx711->PD_SCK, MSBFIRST);
+
+    // Debug prints to verify data read
+    ESP_LOGD(TAG, "Data read: %02x %02x %02x", data[2], data[1], data[0]);
 
     for (unsigned int i = 0; i < hx711->GAIN; i++) {
         digitalWrite(hx711->PD_SCK, 1);
@@ -78,6 +87,9 @@ long hx711_read(HX711 *hx711) {
             | (unsigned long)data[2] << 16
             | (unsigned long)data[1] << 8
             | (unsigned long)data[0]);
+
+    // Debug print to verify the final value
+    ESP_LOGD(TAG, "Raw value: %ld", value);
 
     return (long)value;
 }
