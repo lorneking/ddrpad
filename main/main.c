@@ -17,7 +17,7 @@
 #include "i2s_config.h"
 #include "wifi_credentials.h"
 
-#define WIFI_AUTH WIFI_AUTH_WPA3_PSK
+#define WIFI_AUTH WIFI_AUTH_WPA2_PSK
 #define MAX_RETRY 10
 
 // GPIO Pins
@@ -43,22 +43,79 @@ static int retry_count = 0;
 
 HX711 scale1, scale2, scale3, scale4;
 
+long prevWeight1, prevWeight2, prevWeight3, prevWeight4;
+long delta1, delta2, delta3, delta4;
+
+// LED Control
+void control_led(int gpio_num, bool state) {
+    gpio_set_level(gpio_num, state ? 1 : 0);
+}
+
 void hx711_task(void *pvParameter) {
+
     hx711_init(&scale1, HX711_1_DT, HX711_SCK, 128);
     hx711_init(&scale2, HX711_2_DT, HX711_SCK, 128);
     hx711_init(&scale3, HX711_3_DT, HX711_SCK, 128);
     hx711_init(&scale4, HX711_4_DT, HX711_SCK, 128);
 
     while (1) {
+
         long weight1 = hx711_read(&scale1);
         long weight2 = hx711_read(&scale2);
         long weight3 = hx711_read(&scale3);
         long weight4 = hx711_read(&scale4);
 
-        if (weight1 != -1) ESP_LOGI(TAG, "Weight1: %ld", weight1);
-        if (weight2 != -1) ESP_LOGI(TAG, "Weight2: %ld", weight2);
-        if (weight3 != -1) ESP_LOGI(TAG, "Weight3: %ld", weight3);
-        if (weight4 != -1) ESP_LOGI(TAG, "Weight4: %ld", weight4);
+        if (weight1 != -1) { 
+            ESP_LOGI(TAG, "Weight1: %ld", weight1);
+            //delta1 = weight1 - prevWeight1;
+            //if (delta1 > threshold) {
+            if ((weight1 - threshold) > prevWeight1) {
+                control_led(LED_1_GATE, true);
+                ESP_LOGI(TAG, "Pad 1 Step Detected");
+            } else {
+                control_led(LED_1_GATE, false);
+            }
+            prevWeight1 = weight1;
+        }
+        
+        if (weight2 != -1) { 
+            ESP_LOGI(TAG, "Weight2: %ld", weight2);
+            //delta2 = weight2 - prevWeight2;
+            //if (delta2 > threshold) {
+            if ((weight2 - threshold) > prevWeight2) {
+                control_led(LED_2_GATE, true);
+                ESP_LOGI(TAG, "Pad 2 Step Detected");
+            } else {
+                control_led(LED_2_GATE, false);
+            }
+            prevWeight2 = weight2;
+        }
+
+        if (weight3 != -1) { 
+            ESP_LOGI(TAG, "Weight3: %ld", weight3);
+            //delta3 = weight3 - prevWeight3;
+            //if (delta3 > threshold) {
+            if ((weight3 - threshold) > prevWeight3) {
+                control_led(LED_3_GATE, true);
+                ESP_LOGI(TAG, "Pad 3 Step Detected");
+            } else {
+                control_led(LED_3_GATE, false);
+            }
+            prevWeight3 = weight3;
+        }
+
+        if (weight4 != -1) { 
+            ESP_LOGI(TAG, "Weight4: %ld", weight4);
+            //delta4 = weight4 - prevWeight4;
+            //if (delta4 > threshold) {
+            if ((weight4 - threshold) > prevWeight4) {
+                control_led(LED_4_GATE, true);
+                ESP_LOGI(TAG, "Pad 4 Step Detected");
+            } else {
+                control_led(LED_4_GATE, false);
+            }
+            prevWeight4 = weight4;
+        }
 
         vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second
     }
@@ -156,12 +213,6 @@ void start_webserver(void) {
         };
         httpd_register_uri_handler(server, &uri_hx711);
     }
-}
-
-
-// LED Control
-void control_led(int gpio_num, bool state) {
-    gpio_set_level(gpio_num, state ? 1 : 0);
 }
 
 // GPIO Initialization
