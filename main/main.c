@@ -77,10 +77,15 @@ void control_led(int gpio_num, bool state) {
 
 void hx711_task(void *pvParameter) {
 
-    hx711_init(&scale1, HX711_1_DT, HX711_SCK, 128);
-    hx711_init(&scale2, HX711_2_DT, HX711_SCK, 128);
-    hx711_init(&scale3, HX711_3_DT, HX711_SCK, 128);
-    hx711_init(&scale4, HX711_4_DT, HX711_SCK, 128);
+    // hx711_init(&scale1, HX711_1_DT, HX711_SCK, 128);
+    // hx711_init(&scale2, HX711_2_DT, HX711_SCK, 128);
+    // hx711_init(&scale3, HX711_3_DT, HX711_SCK, 128);
+    // hx711_init(&scale4, HX711_4_DT, HX711_SCK, 128);
+
+    hx711_init(&scale1, HX711_1_DT, HX711_SCK, 64);
+    hx711_init(&scale2, HX711_2_DT, HX711_SCK, 64);
+    hx711_init(&scale3, HX711_3_DT, HX711_SCK, 64);
+    hx711_init(&scale4, HX711_4_DT, HX711_SCK, 64);
 
     while (1) {
 
@@ -149,7 +154,7 @@ void hx711_task(void *pvParameter) {
             prevWeight4 = weight4;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second
+        vTaskDelay(pdMS_TO_TICKS(12)); // Delay for 1 second
     }
 }
 
@@ -266,7 +271,8 @@ void app_main(void) {
 
     start_webserver();
 
-    xTaskCreate(&hx711_task, "hx711_task", 4096, NULL, 5, NULL);
+    //xTaskCreate(&hx711_task, "hx711_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&hx711_task, "hx711_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL);
 
     i2s_chan_handle_t rx_handle;
     ESP_ERROR_CHECK(init_i2s(&rx_handle));
