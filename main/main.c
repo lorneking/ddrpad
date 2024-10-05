@@ -46,6 +46,30 @@ HX711 scale1, scale2, scale3, scale4;
 long prevWeight1, prevWeight2, prevWeight3, prevWeight4;
 long delta1, delta2, delta3, delta4;
 
+// GPIO Initialization
+void init_gpio() {
+    ESP_LOGI("GPIO", "Initializing GPIOs...");
+    
+    // Initialize GPIOs for LEDs
+    gpio_reset_pin(LED_1_GATE);
+    gpio_set_direction(LED_1_GATE, GPIO_MODE_OUTPUT);
+    gpio_set_pull_mode(LED_1_GATE, GPIO_PULLUP_ONLY);
+    
+    gpio_reset_pin(LED_2_GATE);
+    gpio_set_direction(LED_2_GATE, GPIO_MODE_OUTPUT);
+    gpio_set_pull_mode(LED_2_GATE, GPIO_PULLUP_ONLY);
+    
+    gpio_reset_pin(LED_3_GATE);
+    gpio_set_direction(LED_3_GATE, GPIO_MODE_OUTPUT);
+    gpio_set_pull_mode(LED_3_GATE, GPIO_PULLUP_ONLY);
+    
+    gpio_reset_pin(LED_4_GATE);
+    gpio_set_direction(LED_4_GATE, GPIO_MODE_OUTPUT);
+    gpio_set_pull_mode(LED_4_GATE, GPIO_PULLUP_ONLY);
+
+    ESP_LOGI("GPIO", "GPIOs Initialized.");
+}
+
 // LED Control
 void control_led(int gpio_num, bool state) {
     gpio_set_level(gpio_num, state ? 1 : 0);
@@ -70,10 +94,12 @@ void hx711_task(void *pvParameter) {
             //delta1 = weight1 - prevWeight1;
             //if (delta1 > threshold) {
             if ((weight1 - threshold) > prevWeight1) {
-                control_led(LED_1_GATE, true);
+                //control_led(LED_1_GATE, true);
+                gpio_set_level(LED_1_GATE, 1);
                 ESP_LOGI(TAG, "Pad 1 Step Detected");
             } else {
-                control_led(LED_1_GATE, false);
+                //control_led(LED_1_GATE, false);
+                gpio_set_level(LED_1_GATE, 0);
             }
             prevWeight1 = weight1;
         }
@@ -83,10 +109,12 @@ void hx711_task(void *pvParameter) {
             //delta2 = weight2 - prevWeight2;
             //if (delta2 > threshold) {
             if ((weight2 - threshold) > prevWeight2) {
-                control_led(LED_2_GATE, true);
+                //control_led(LED_2_GATE, true);
+                gpio_set_level(LED_2_GATE, 1);
                 ESP_LOGI(TAG, "Pad 2 Step Detected");
             } else {
-                control_led(LED_2_GATE, false);
+                //control_led(LED_2_GATE, false);
+                gpio_set_level(LED_2_GATE, 0);
             }
             prevWeight2 = weight2;
         }
@@ -96,10 +124,12 @@ void hx711_task(void *pvParameter) {
             //delta3 = weight3 - prevWeight3;
             //if (delta3 > threshold) {
             if ((weight3 - threshold) > prevWeight3) {
-                control_led(LED_3_GATE, true);
+                //control_led(LED_3_GATE, true);
+                gpio_set_level(LED_3_GATE, 1);
                 ESP_LOGI(TAG, "Pad 3 Step Detected");
             } else {
-                control_led(LED_3_GATE, false);
+                //control_led(LED_3_GATE, false);
+                gpio_set_level(LED_3_GATE, 0);
             }
             prevWeight3 = weight3;
         }
@@ -109,10 +139,12 @@ void hx711_task(void *pvParameter) {
             //delta4 = weight4 - prevWeight4;
             //if (delta4 > threshold) {
             if ((weight4 - threshold) > prevWeight4) {
-                control_led(LED_4_GATE, true);
+                //control_led(LED_4_GATE, true);
+                gpio_set_level(LED_4_GATE, 1);
                 ESP_LOGI(TAG, "Pad 4 Step Detected");
             } else {
-                control_led(LED_4_GATE, false);
+                //control_led(LED_4_GATE, false);
+                gpio_set_level(LED_4_GATE, 0);
             }
             prevWeight4 = weight4;
         }
@@ -215,30 +247,6 @@ void start_webserver(void) {
     }
 }
 
-// GPIO Initialization
-void init_gpio() {
-    ESP_LOGI("GPIO", "Initializing GPIOs...");
-    
-    // Initialize GPIOs for LEDs
-    gpio_reset_pin(LED_1_GATE);
-    gpio_set_direction(LED_1_GATE, GPIO_MODE_OUTPUT);
-    gpio_set_pull_mode(LED_1_GATE, GPIO_PULLUP_ONLY);
-    
-    gpio_reset_pin(LED_2_GATE);
-    gpio_set_direction(LED_2_GATE, GPIO_MODE_OUTPUT);
-    gpio_set_pull_mode(LED_2_GATE, GPIO_PULLUP_ONLY);
-    
-    gpio_reset_pin(LED_3_GATE);
-    gpio_set_direction(LED_3_GATE, GPIO_MODE_OUTPUT);
-    gpio_set_pull_mode(LED_3_GATE, GPIO_PULLUP_ONLY);
-    
-    gpio_reset_pin(LED_4_GATE);
-    gpio_set_direction(LED_4_GATE, GPIO_MODE_OUTPUT);
-    gpio_set_pull_mode(LED_4_GATE, GPIO_PULLUP_ONLY);
-
-    ESP_LOGI("GPIO", "GPIOs Initialized.");
-}
-
 void app_main(void) {
     esp_log_level_set("wifi", ESP_LOG_VERBOSE);
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
@@ -250,6 +258,9 @@ void app_main(void) {
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    // Initialize GPIOs
+    init_gpio();
 
     wifi_init_sta();
 
