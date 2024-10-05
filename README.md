@@ -7,3 +7,5 @@ https://www.reddit.com/r/DanceDanceRevolution/comments/85guhf/my_self_made_ddr_p
 https://www.hackmycab.com/
 
 Based on the ESP32-S3
+
+![20241003_185030](https://github.com/user-attachments/assets/98da7a3b-95d9-46a5-a7c7-5babddf7ff0e)
