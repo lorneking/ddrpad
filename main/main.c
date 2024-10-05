@@ -32,7 +32,7 @@
 #define LED_4_GATE GPIO_NUM_38
 
 // Define threshold values
-long threshold = 1000;
+long threshold = 10000;
 int soundThreshold = 300;
 
 i2s_chan_handle_t rx_handle;
@@ -44,7 +44,7 @@ static int retry_count = 0;
 HX711 scale1, scale2, scale3, scale4;
 
 long prevWeight1, prevWeight2, prevWeight3, prevWeight4;
-long delta1, delta2, delta3, delta4;
+// long delta1, delta2, delta3, delta4;
 
 // GPIO Initialization
 void init_gpio() {
@@ -95,13 +95,13 @@ void hx711_task(void *pvParameter) {
         long weight4 = hx711_read(&scale4);
 
         if (weight1 != -1) { 
-            ESP_LOGI(TAG, "Weight1: %ld", weight1);
+            //ESP_LOGI(TAG, "Weight1: %ld", weight1);
             //delta1 = weight1 - prevWeight1;
             //if (delta1 > threshold) {
             if ((weight1 - threshold) > prevWeight1) {
                 //control_led(LED_1_GATE, true);
                 gpio_set_level(LED_1_GATE, 1);
-                ESP_LOGI(TAG, "Pad 1 Step Detected");
+                //ESP_LOGI(TAG, "Pad 1 Step Detected");
             } else {
                 //control_led(LED_1_GATE, false);
                 gpio_set_level(LED_1_GATE, 0);
@@ -110,13 +110,13 @@ void hx711_task(void *pvParameter) {
         }
         
         if (weight2 != -1) { 
-            ESP_LOGI(TAG, "Weight2: %ld", weight2);
+            //ESP_LOGI(TAG, "Weight2: %ld", weight2);
             //delta2 = weight2 - prevWeight2;
             //if (delta2 > threshold) {
             if ((weight2 - threshold) > prevWeight2) {
                 //control_led(LED_2_GATE, true);
                 gpio_set_level(LED_2_GATE, 1);
-                ESP_LOGI(TAG, "Pad 2 Step Detected");
+                //ESP_LOGI(TAG, "Pad 2 Step Detected");
             } else {
                 //control_led(LED_2_GATE, false);
                 gpio_set_level(LED_2_GATE, 0);
@@ -125,13 +125,13 @@ void hx711_task(void *pvParameter) {
         }
 
         if (weight3 != -1) { 
-            ESP_LOGI(TAG, "Weight3: %ld", weight3);
+            //ESP_LOGI(TAG, "Weight3: %ld", weight3);
             //delta3 = weight3 - prevWeight3;
             //if (delta3 > threshold) {
             if ((weight3 - threshold) > prevWeight3) {
                 //control_led(LED_3_GATE, true);
                 gpio_set_level(LED_3_GATE, 1);
-                ESP_LOGI(TAG, "Pad 3 Step Detected");
+                //ESP_LOGI(TAG, "Pad 3 Step Detected");
             } else {
                 //control_led(LED_3_GATE, false);
                 gpio_set_level(LED_3_GATE, 0);
@@ -140,13 +140,13 @@ void hx711_task(void *pvParameter) {
         }
 
         if (weight4 != -1) { 
-            ESP_LOGI(TAG, "Weight4: %ld", weight4);
+            //ESP_LOGI(TAG, "Weight4: %ld", weight4);
             //delta4 = weight4 - prevWeight4;
             //if (delta4 > threshold) {
             if ((weight4 - threshold) > prevWeight4) {
                 //control_led(LED_4_GATE, true);
                 gpio_set_level(LED_4_GATE, 1);
-                ESP_LOGI(TAG, "Pad 4 Step Detected");
+                //ESP_LOGI(TAG, "Pad 4 Step Detected");
             } else {
                 //control_led(LED_4_GATE, false);
                 gpio_set_level(LED_4_GATE, 0);
