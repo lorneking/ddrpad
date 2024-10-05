@@ -50,7 +50,7 @@ long hx711_read(HX711 *hx711) {
         return -1;
     }
 
-    hx711_wait_ready(hx711, 0);
+    hx711_wait_ready(hx711, 1);
 
     unsigned long value = 0;
     uint8_t data[3] = {0};
